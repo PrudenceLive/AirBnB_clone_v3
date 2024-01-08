@@ -64,28 +64,6 @@ class DBStorage:
         if obj is not None:
             self.__session.delete(obj)
 
-    def get(self, cls, id):
-        """A method to retrieve one object
-        Returns the object based on the class name and its ID, or
-        None if not found
-        """
-        if type(cls) == str:
-            cls = classes.get(cls)
-        if cls is None:
-            return None
-        return self.__session.query(cls).filter(cls.id == id).first()
-
-    def count(self, cls=None):
-        """A method to count the number of objects in storage
-        Returns the number of objects in storage matching the given class name
-        If no name is passed, returns the count of all objects in storage
-        """
-        if type(cls) is str:
-            cls = classes.get(cls)
-        if cls is None:
-            return len(self.all())
-        return len(self.all(cls))
-
     def reload(self):
         """reloads data from the database"""
         Base.metadata.create_all(self.__engine)
@@ -96,3 +74,25 @@ class DBStorage:
     def close(self):
         """call remove() method on the private session attribute"""
         self.__session.remove()
+
+    def get(self, cls, id):
+        """
+        Returns the object based on the class name and its ID, or None if not
+        found
+        """
+        objects = self.__session.query(classes[cls])
+        for obj in objects:
+            if obj.id == id:
+                return obj
+        return None
+
+    def count(self, cls=None):
+        """
+        Returns the number of objects in storage matching the given class name.
+        If no name is passed, returns the count of all objects in storage.
+        """
+        nobjects = 0
+        for clss in classes:
+            if cls is None or cls is classes[clss] or cls is clss:
+                nobjects += len(self.__session.query(classes[clss]).all())
+        return nobjects
